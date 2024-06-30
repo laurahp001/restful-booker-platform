@@ -1,4 +1,4 @@
-FROM openjdk:15-slim
+FROM openjdk:18-slim
 
 ADD . /usr/local/assets
 
