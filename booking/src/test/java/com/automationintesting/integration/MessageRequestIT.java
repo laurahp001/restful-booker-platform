@@ -2,6 +2,7 @@ package com.automationintesting.integration;
 
 import com.automationintesting.api.BookingApplication;
 import com.automationintesting.model.db.Booking;
+import com.xebialabs.restito.semantics.Call;
 import com.xebialabs.restito.server.StubServer;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;

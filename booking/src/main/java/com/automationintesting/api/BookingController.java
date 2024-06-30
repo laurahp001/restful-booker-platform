@@ -2,16 +2,15 @@ package com.automationintesting.api;
 
 import com.automationintesting.model.db.Booking;
 import com.automationintesting.model.db.BookingSummaries;
-import com.automationintesting.model.db.Bookings;
 import com.automationintesting.model.db.CreatedBooking;
 import com.automationintesting.model.service.BookingResult;
 import com.automationintesting.service.BookingService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
 import java.sql.SQLException;
 import java.util.Optional;
 

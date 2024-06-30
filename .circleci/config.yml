@@ -7,7 +7,7 @@ jobs:
   checkout_code:
 
     docker:
-      - image: cimg/openjdk:15.0
+      - image: cimg/openjdk:18.0
 
     environment:
       MAVEN_OPTS: -Xmx3200m
@@ -16,13 +16,9 @@ jobs:
       - checkout
       - run:
           command: |
-            mkdir ~/tmp
-            for folder in `git log --format="" --name-only ${CIRCLE_COMPARE_URL##http*/} | cut -d"/" -f1 | sort -u`; do
-              echo "$folder will be built in this run"
-              touch ~/tmp/$folder.txt
-            done
             extract=`mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.version -q -DforceStdout`
             version=${extract/SNAPSHOT/$(git rev-parse --short HEAD)}
+            mkdir ~/tmp
             touch ~/tmp/$version.tmp
           working_directory: auth
       - save_cache:
@@ -33,7 +29,7 @@ jobs:
   run_auth_build:
 
     docker:
-      - image: cimg/openjdk:15.0
+      - image: cimg/openjdk:18.0
 
     environment:
         MAVEN_OPTS: -Xmx3200m
@@ -43,12 +39,7 @@ jobs:
           key: v1-repo-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           command: |
-            if [ -f ~/tmp/auth.txt ]; then
-              echo "[BUILDING] Auth"
-              mvn clean install -Drevision=$(git rev-parse --short HEAD)
-            else
-              echo "[SKIPPING] Auth"
-            fi
+            mvn clean install -Drevision=$(git rev-parse --short HEAD)
           working_directory: auth
       - save_cache:
           paths:
@@ -58,7 +49,7 @@ jobs:
   run_booking_build:
 
     docker:
-      - image: cimg/openjdk:15.0
+      - image: cimg/openjdk:18.0
 
     environment:
         MAVEN_OPTS: -Xmx3200m
@@ -68,12 +59,7 @@ jobs:
           key: v1-repo-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           command: |
-            if [ -f ~/tmp/booking.txt ]; then
-              echo "[BUILDING] Booking"
-              mvn clean install -Drevision=$(git rev-parse --short HEAD)
-            else
-              echo "[SKIPPING] Booking"
-            fi
+            mvn clean install -Drevision=$(git rev-parse --short HEAD)
           working_directory: booking
       - save_cache:
           paths:
@@ -83,7 +69,7 @@ jobs:
   run_report_build:
 
     docker:
-      - image: cimg/openjdk:15.0
+      - image: cimg/openjdk:18.0
 
     environment:
         MAVEN_OPTS: -Xmx3200m
@@ -93,12 +79,7 @@ jobs:
           key: v1-repo-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           command: |
-            if [ -f ~/tmp/report.txt ]; then
-              echo "[BUILDING] Report"
-              mvn clean install -Drevision=$(git rev-parse --short HEAD)
-            else
-              echo "[SKIPPING] Report"
-            fi
+            mvn clean install -Drevision=$(git rev-parse --short HEAD)
           working_directory: report
       - save_cache:
           paths:
@@ -108,7 +89,7 @@ jobs:
   run_room_build:
 
     docker:
-      - image: cimg/openjdk:15.0
+      - image: cimg/openjdk:18.0
 
     environment:
         MAVEN_OPTS: -Xmx3200m
@@ -118,12 +99,7 @@ jobs:
           key: v1-repo-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           command: |
-            if [ -f ~/tmp/room.txt ]; then
-              echo "[BUILDING] Room"
-              mvn clean install -Drevision=$(git rev-parse --short HEAD)
-            else
-              echo "[SKIPPING] Room"
-            fi
+            mvn clean install -Drevision=$(git rev-parse --short HEAD)
           working_directory: room
       - save_cache:
           paths:
@@ -133,7 +109,7 @@ jobs:
   run_branding_build:
 
     docker:
-      - image: cimg/openjdk:15.0
+      - image: cimg/openjdk:18.0
 
     environment:
         MAVEN_OPTS: -Xmx3200m
@@ -143,12 +119,7 @@ jobs:
           key: v1-repo-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           command: |
-            if [ -f ~/tmp/branding.txt ]; then
-              echo "[BUILDING] Branding"
-              mvn clean install -Drevision=$(git rev-parse --short HEAD)
-            else
-              echo "[SKIPPING] Branding"
-            fi
+            mvn clean install -Drevision=$(git rev-parse --short HEAD)
           working_directory: branding
       - save_cache:
           paths:
@@ -158,7 +129,7 @@ jobs:
   run_message_build:
 
     docker:
-      - image: cimg/openjdk:15.0
+      - image: cimg/openjdk:18.0
 
     environment:
       MAVEN_OPTS: -Xmx3200m
@@ -168,12 +139,7 @@ jobs:
           key: v1-repo-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           command: |
-            if [ -f ~/tmp/message.txt ]; then
-              echo "[BUILDING] Message"
-              mvn clean install -Drevision=$(git rev-parse --short HEAD)
-            else
-              echo "[SKIPPING] Message"
-            fi
+            mvn clean install -Drevision=$(git rev-parse --short HEAD)
           working_directory: message
       - save_cache:
           paths:
@@ -183,47 +149,36 @@ jobs:
   run_assets_tests:
 
     docker:
-      - image: cimg/openjdk:15.0-node
+      - image: cimg/openjdk:20.0-node
     resource_class: large
     steps:
       - restore_cache:
           key: v1-repo-{{ .Environment.CIRCLE_SHA1 }}
+#      - run:
+#          name: Install Sauce Connect Proxy
+#          command: |
+#            cd /tmp
+#            curl https://saucelabs.com/downloads/sc-4.6.2-linux.tar.gz -o saucelabs.tar.gz
+#            tar -xzf saucelabs.tar.gz
+#            chmod a+x sc-4.6.2-linux/bin/sc
+#            sudo cp sc-4.6.2-linux/bin/sc /usr/local/bin
+#            sc --version
       - run:
-          name: Startup local proxy
-          background: true
           command: |
+            echo "[BUILDING] Assets"
             npm install --legacy-peer-deps
-            npm start
-          working_directory: .utilities/rbp-proxy/local/
-      - run:
-          name: Install Sauce Connect Proxy
-          command: |
-            cd /tmp
-            curl https://saucelabs.com/downloads/sc-4.6.2-linux.tar.gz -o saucelabs.tar.gz
-            tar -xzf saucelabs.tar.gz
-            chmod a+x sc-4.6.2-linux/bin/sc
-            sudo cp sc-4.6.2-linux/bin/sc /usr/local/bin
-            sc --version
-      - run:
-          command: |
-            if [ -f ~/tmp/assets.txt ]; then
-              echo "[BUILDING] Assets"
-              npm install --legacy-peer-deps
-              npm test -- --runInBand
-              npm run build
-              cd ..
-              cd api
-              if [[ -z "${APPLITOOLS_API_KEY}" ]]; then
-                printf "Skipping visual checks because no applitools api key has been set. Assign a key to APPLITOOLS_API_KEY to run visual checks"
-                mvn install -Drevision=$(git rev-parse --short HEAD)
-              else
-                sc -u ${SAUCE_USERNAME} -k ${SAUCE_ACCESS_KEY} -x https://eu-central-1.saucelabs.com/rest/v1 --se-port 4445 &
-                wget --retry-connrefused --no-check-certificate -T 60 localhost:4445
-
-                mvn install -Drevision=$(git rev-parse --short HEAD) -P ci
-              fi
+            npm test -- --runInBand
+            npm run build
+            cd ..
+            cd api
+            if [[ -z "${APPLITOOLS_API_KEY}" ]]; then
+              printf "Skipping visual checks because no applitools api key has been set. Assign a key to APPLITOOLS_API_KEY to run visual checks"
+              mvn install -Drevision=$(git rev-parse --short HEAD)
             else
-              echo "[SKIPPING] Assets"
+              sc -u ${SAUCE_USERNAME} -k ${SAUCE_ACCESS_KEY} -x https://eu-central-1.saucelabs.com/rest/v1 --se-port 4445 &
+              wget --retry-connrefused --no-check-certificate -T 60 localhost:4445
+
+              mvn install -Drevision=$(git rev-parse --short HEAD) -P ci
             fi
           working_directory: assets/js
           environment:
@@ -236,7 +191,7 @@ jobs:
   build_auth_docker_image:
 
     docker:
-      - image: cimg/openjdk:15.0
+      - image: cimg/openjdk:18.0
 
     steps:
       - restore_cache:
@@ -248,7 +203,7 @@ jobs:
           command: |
             if [ -f ~/project/auth/target/restful-booker-platform-auth-*-exec.jar ] && [ $CIRCLE_BRANCH == "trunk" ]; then
               echo "[BUILDING] Auth"
-              docker login -u $DOCKER_USER -p $DOCKER_PASS
+              echo "$DOCKER_PASS" | docker login --username $DOCKER_USER --password-stdin
               docker build -t mwinteringham/restfulbookerplatform_auth:$(ls target/restful-booker-platform-auth-*-exec.jar | cut -d '-' -f 5 | cut -c1-11) .
               docker push mwinteringham/restfulbookerplatform_auth:$(ls target/restful-booker-platform-auth-*-exec.jar | cut -d '-' -f 5 | cut -c1-11)
             else
@@ -259,7 +214,7 @@ jobs:
   build_booking_docker_image:
 
       docker:
-        - image: cimg/openjdk:15.0
+        - image: cimg/openjdk:18.0
 
       steps:
         - restore_cache:
@@ -272,7 +227,7 @@ jobs:
             command: |
               if [ -f ~/project/booking/target/restful-booker-platform-booking-*-exec.jar ] && [ $CIRCLE_BRANCH == "trunk" ]; then
                 echo "[BUILDING] Booking"
-                docker login -u $DOCKER_USER -p $DOCKER_PASS
+                echo "$DOCKER_PASS" | docker login --username $DOCKER_USER --password-stdin
                 docker build -t mwinteringham/restfulbookerplatform_booking:$(ls target/restful-booker-platform-booking-*-exec.jar | cut -d '-' -f 5 | cut -c1-11) .
                 docker push mwinteringham/restfulbookerplatform_booking:$(ls target/restful-booker-platform-booking-*-exec.jar | cut -d '-' -f 5 | cut -c1-11)
               else
@@ -283,7 +238,7 @@ jobs:
   build_report_docker_image:
 
       docker:
-        - image: cimg/openjdk:15.0
+        - image: cimg/openjdk:18.0
 
       steps:
         - restore_cache:
@@ -296,7 +251,7 @@ jobs:
             command: |
               if [ -f ~/project/report/target/restful-booker-platform-report-*-exec.jar ] && [ $CIRCLE_BRANCH == "trunk" ]; then
                 echo "[BUILDING] Report"
-                docker login -u $DOCKER_USER -p $DOCKER_PASS
+                echo "$DOCKER_PASS" | docker login --username $DOCKER_USER --password-stdin
                 docker build -t mwinteringham/restfulbookerplatform_report:$(ls target/restful-booker-platform-report-*-exec.jar | cut -d '-' -f 5 | cut -c1-11) .
                 docker push mwinteringham/restfulbookerplatform_report:$(ls target/restful-booker-platform-report-*-exec.jar | cut -d '-' -f 5 | cut -c1-11)
               else
@@ -307,7 +262,7 @@ jobs:
   build_room_docker_image:
 
       docker:
-        - image: cimg/openjdk:15.0
+        - image: cimg/openjdk:18.0
 
       steps:
         - restore_cache:
@@ -320,7 +275,7 @@ jobs:
             command: |
               if [ -f ~/project/room/target/restful-booker-platform-room-*-exec.jar ] && [ $CIRCLE_BRANCH == "trunk" ]; then
                 echo "[BUILDING] Room"
-                docker login -u $DOCKER_USER -p $DOCKER_PASS
+                echo "$DOCKER_PASS" | docker login --username $DOCKER_USER --password-stdin
                 docker build -t mwinteringham/restfulbookerplatform_room:$(ls target/restful-booker-platform-room-*-exec.jar | cut -d '-' -f 5 | cut -c1-11) .
                 docker push mwinteringham/restfulbookerplatform_room:$(ls target/restful-booker-platform-room-*-exec.jar | cut -d '-' -f 5 | cut -c1-11)
               else
@@ -331,7 +286,7 @@ jobs:
   build_branding_docker_image:
 
       docker:
-        - image: cimg/openjdk:15.0
+        - image: cimg/openjdk:18.0
 
       steps:
         - restore_cache:
@@ -344,7 +299,7 @@ jobs:
             command: |
               if [ -f ~/project/branding/target/restful-booker-platform-branding-*-exec.jar ] && [ $CIRCLE_BRANCH == "trunk" ]; then
                 echo "[BUILDING] Branding"
-                docker login -u $DOCKER_USER -p $DOCKER_PASS
+                echo "$DOCKER_PASS" | docker login --username $DOCKER_USER --password-stdin
                 docker build -t mwinteringham/restfulbookerplatform_branding:$(ls target/restful-booker-platform-branding-*-exec.jar | cut -d '-' -f 5 | cut -c1-11) .
                 docker push mwinteringham/restfulbookerplatform_branding:$(ls target/restful-booker-platform-branding-*-exec.jar | cut -d '-' -f 5 | cut -c1-11)
               else
@@ -355,7 +310,7 @@ jobs:
   build_message_docker_image:
 
     docker:
-      - image: cimg/openjdk:15.0
+      - image: cimg/openjdk:18.0
 
     steps:
       - restore_cache:
@@ -368,7 +323,7 @@ jobs:
           command: |
             if [ -f ~/project/message/target/restful-booker-platform-message-*-exec.jar ] && [ $CIRCLE_BRANCH == "trunk" ]; then
               echo "[BUILDING] Message"
-              docker login -u $DOCKER_USER -p $DOCKER_PASS
+              echo "$DOCKER_PASS" | docker login --username $DOCKER_USER --password-stdin
               docker build -t mwinteringham/restfulbookerplatform_message:$(ls target/restful-booker-platform-message-*-exec.jar | cut -d '-' -f 5 | cut -c1-11) .
               docker push mwinteringham/restfulbookerplatform_message:$(ls target/restful-booker-platform-message-*-exec.jar | cut -d '-' -f 5 | cut -c1-11)
             else
@@ -379,7 +334,7 @@ jobs:
   build_assets_docker_image:
 
         docker:
-          - image: cimg/openjdk:15.0-node
+          - image: cimg/openjdk:18.0-node
 
         steps:
           - restore_cache:
@@ -392,7 +347,7 @@ jobs:
               command: |
                 if [ -f ~/project/assets/api/target/restful-booker-platform-assets-*-exec.jar ] && [ $CIRCLE_BRANCH == "trunk" ]; then
                   echo "[BUILDING] Assets"
-                  docker login -u $DOCKER_USER -p $DOCKER_PASS
+                  echo "$DOCKER_PASS" | docker login --username $DOCKER_USER --password-stdin
                   docker build -t mwinteringham/restfulbookerplatform_assets:$(ls api/target/restful-booker-platform-assets-*-exec.jar | cut -d '-' -f 5 | cut -c1-11) .
                   docker push mwinteringham/restfulbookerplatform_assets:$(ls api/target/restful-booker-platform-assets-*-exec.jar | cut -d '-' -f 5 | cut -c1-11)
                 else
@@ -403,7 +358,7 @@ jobs:
   deploy_auth_docker_image:
 
     docker:
-      - image: cimg/openjdk:15.0
+      - image: cimg/openjdk:18.0
 
     steps:
       - restore_cache:
@@ -425,7 +380,7 @@ jobs:
   deploy_booking_docker_image:
 
     docker:
-      - image: cimg/openjdk:15.0
+      - image: cimg/openjdk:18.0
 
     steps:
       - restore_cache:
@@ -447,7 +402,7 @@ jobs:
   deploy_report_docker_image:
 
       docker:
-        - image: cimg/openjdk:15.0
+        - image: cimg/openjdk:18.0
 
       steps:
         - restore_cache:
@@ -469,7 +424,7 @@ jobs:
   deploy_room_docker_image:
 
     docker:
-      - image: cimg/openjdk:15.0
+      - image: cimg/openjdk:18.0
 
     steps:
       - restore_cache:
@@ -491,7 +446,7 @@ jobs:
   deploy_branding_docker_image:
 
     docker:
-      - image: cimg/openjdk:15.0
+      - image: cimg/openjdk:18.0
 
     steps:
       - restore_cache:
@@ -513,7 +468,7 @@ jobs:
   deploy_message_docker_image:
 
     docker:
-      - image: cimg/openjdk:15.0
+      - image: cimg/openjdk:18.0
 
     steps:
       - restore_cache:
@@ -535,7 +490,7 @@ jobs:
   deploy_assets_docker_image:
 
     docker:
-      - image: cimg/openjdk:15.0-node
+      - image: cimg/openjdk:18.0-node
 
     steps:
       - restore_cache:
@@ -557,7 +512,7 @@ jobs:
   run_e2e_checks:
 
     docker:
-      - image: cimg/openjdk:15.0-browsers
+      - image: cimg/openjdk:18.0-browsers
 
     steps:
       - restore_cache:
