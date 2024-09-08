@@ -3,6 +3,10 @@
 # Check https://circleci.com/docs/2.0/language-java/ for more details
 #
 version: 2
+# Uses the official Cypress Orb
+# https://circleci.com/developer/orbs/orb/cypress-io/cypress
+orbs:
+  cypress: cypress-io/cypress@3
 jobs:
   checkout_code:
 
@@ -610,3 +614,15 @@ workflows:
             - deploy_assets_docker_image
             - deploy_branding_docker_image
             - deploy_message_docker_image
+
+      - cypress/run:
+          # For recording and parallelization to work you must set your CYPRESS_RECORD_KEY
+          # in CircleCI → Project Settings → Environment Variables
+          # Records in parallel to Cypress Cloud
+          # https://docs.cypress.io/guides/guides/parallelization
+          parallelism: 2 # Uses 2 parallel instances
+          # Starts web server for E2E tests - replace with your own server invocation
+          # https://docs.cypress.io/guides/continuous-integration/introduction#Boot-your-server
+          start-command: npm run start
+          cypress-command: 'npx cypress run --record --parallel'
+
